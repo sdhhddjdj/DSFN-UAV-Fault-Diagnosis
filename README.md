@@ -27,7 +27,8 @@ cross-modal similarity-guided reliability-consistency fusion (CRCF) module.
 
 ## Installation
 
-Python 3.9 or later is recommended.
+The reported experiments were conducted using Python 3.8.20. Python 3.9 or
+later may also be used with compatible dependencies.
 
 ```bash
 python -m venv .venv
@@ -66,7 +67,7 @@ for Linux/macOS:
 SGLA_DATA_ROOT=data/processed \
 SGLA_SPLIT_DIR=data/processed/fixed_split_80_10_10_seed42 \
 SGLA_SAVE_ROOT=runs \
-SGLA_EXP_NAME=Denoise_RCDFusion \
+SGLA_EXP_NAME=Paper_A4_DSFN \
 SGLA_SEED=42 \
 SGLA_USE_POSITIONAL_ENCODING=0 \
 python train_dsfn.py
@@ -78,7 +79,7 @@ Windows PowerShell:
 $env:SGLA_DATA_ROOT = "data/processed"
 $env:SGLA_SPLIT_DIR = "data/processed/fixed_split_80_10_10_seed42"
 $env:SGLA_SAVE_ROOT = "runs"
-$env:SGLA_EXP_NAME = "Denoise_RCDFusion"
+$env:SGLA_EXP_NAME = "Paper_A4_DSFN"
 $env:SGLA_SEED = "42"
 $env:SGLA_USE_POSITIONAL_ENCODING = "0"
 python train_dsfn.py
@@ -88,11 +89,21 @@ Repeat the experiment with seeds `42`, `2025`, and `3407` and report the mean
 and standard deviation. Checkpoints, tables, and figures are written under the
 configured run directory.
 
+## Manuscript ablations
+
+Panel A is implemented with the following five configurations:
+
+- `Paper_A0_StaticAvg`: static average-fusion baseline.
+- `Paper_A1_DynamicDepth`: A0 with dynamic-depth encoding.
+- `Paper_A2_DynamicDepthLoss`: A1 with the similarity-guided depth loss.
+- `Paper_A3_GTD`: A2 with gated feature-level denoising.
+- `Paper_A4_DSFN`: the complete model, adding CRCF to A3.
+
 ## Dynamic-inference benchmark
 
 ```bash
 python benchmark_dynamic_efficiency.py \
-  --checkpoint runs/Denoise_RCDFusion_seed42/best_model.pth \
+  --checkpoint runs/Paper_A4_DSFN_seed42/best_model.pth \
   --data-root data/processed \
   --split-dir data/processed/fixed_split_80_10_10_seed42 \
   --output-dir results/efficiency \
