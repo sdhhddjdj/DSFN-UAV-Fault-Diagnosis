@@ -63,7 +63,7 @@ CONFIG = {
     "data_root": os.environ.get("SGLA_DATA_ROOT", "dataset"),
 
     # 实验名称
-        "exp_name": "Denoise_RCDFusion",
+        "exp_name": "Paper_A4_DSFN",
 
     # 模型结构开关
     "use_temporal_cnn": True,
@@ -71,12 +71,12 @@ CONFIG = {
     # 动态融合拆成两部分
     "use_gate_dynamic_weight": True,      # base阶段是否用动态融合生成门控权重
     "use_final_dynamic_fusion": True,     # 最终分类前是否用动态融合
-    "use_rcd_fusion": False,             # RCD-Fusion: 可靠性-一致性动态融合
-    "rcd_aux_weight": 0.20,              # 单模态辅助分类损失权重
-    "rcd_balance_weight": 0.01,          # 融合权重批均衡正则权重
-    "rcd_use_reliability": True,
-    "rcd_use_consistency": True,
-    "rcd_use_certainty": True,
+    "use_crcf": False,             # CRCF: 可靠性-一致性动态融合
+    "crcf_aux_weight": 0.20,              # 单模态辅助分类损失权重
+    "crcf_balance_weight": 0.01,          # 融合权重批均衡正则权重
+    "crcf_use_reliability": True,
+    "crcf_use_consistency": True,
+    "crcf_use_certainty": True,
 
     "use_outer_gate": True,
     "use_matl": False,
@@ -159,7 +159,7 @@ CONFIG = {
     "save_root": "runs",
     "init_weights": os.environ.get("SGLA_INIT_WEIGHTS", ""),
 }
-CONFIG["save_root"] = os.environ.get("SGLA_SAVE_ROOT", "runs_sgla_rcd_fusion_80_10_10")
+CONFIG["save_root"] = os.environ.get("SGLA_SAVE_ROOT", "runs_dsfn_80_10_10")
 CONFIG["run_final_reports"] = _env_bool("SGLA_RUN_FINAL_REPORTS", True)
 CONFIG["clean_test_only"] = _env_bool("SGLA_CLEAN_TEST_ONLY", False)
 CONFIG["save_dir"] = os.path.join(
@@ -219,9 +219,9 @@ ABLATION_CONFIGS = {
     "use_prefusion_denoise": False,
     "use_cross_residual": True,
     "use_amcf": False,
-    "rcd_use_reliability": True,
-    "rcd_use_consistency": True,
-    "rcd_use_certainty": True,
+    "crcf_use_reliability": True,
+    "crcf_use_consistency": True,
+    "crcf_use_certainty": True,
 },
 "Proposed": {
     "use_temporal_cnn": True,
@@ -289,16 +289,16 @@ ABLATION_CONFIGS = {
     "use_prefusion_denoise": True,
 },
 
-"Denoise_RCDFusion": {
-    # 在 Denoise_AvgFusion 基础上，仅将最终平均融合替换为 RCD-Fusion；
+"Denoise_CRCF": {
+    # 在 Denoise_AvgFusion 基础上，仅将最终平均融合替换为 CRCF；
     # 其余结构与训练策略尽量保持一致，便于做单因素对比。
     "use_temporal_cnn": True,
     "use_cross_attn": False,
     "use_gate_dynamic_weight": True,
     "use_final_dynamic_fusion": False,
-    "use_rcd_fusion": True,
-    "rcd_aux_weight": 0.05,
-    "rcd_balance_weight": 0.01,
+    "use_crcf": True,
+    "crcf_aux_weight": 0.05,
+    "crcf_balance_weight": 0.01,
     "use_outer_gate": True,
     "use_sgla": True,
     "use_sgla_loss": True,
@@ -393,15 +393,15 @@ ABLATION_CONFIGS = {
 }
 
 PAPER_ABLATION_CONFIGS = {
-    # Paper_* variants are kept orthogonal for thesis/journal tables.
-    # They progressively add the proposed components on the same backbone.
+    # Panel A in the manuscript: Static Avg -> Dynamic Depth -> Dynamic Depth
+    # Loss -> GTD -> complete DSFN (GTD + CRCF).
     "Paper_A0_StaticAvg": {
         "use_temporal_cnn": True,
         "use_cross_attn": False,
         "use_cross_residual": True,
         "use_gate_dynamic_weight": False,
         "use_final_dynamic_fusion": False,
-        "use_rcd_fusion": False,
+        "use_crcf": False,
         "use_outer_gate": False,
         "use_sgla": False,
         "use_sgla_loss": False,
@@ -417,7 +417,7 @@ PAPER_ABLATION_CONFIGS = {
         "use_cross_residual": True,
         "use_gate_dynamic_weight": False,
         "use_final_dynamic_fusion": False,
-        "use_rcd_fusion": False,
+        "use_crcf": False,
         "use_outer_gate": False,
         "use_sgla": True,
         "use_sgla_loss": False,
@@ -433,7 +433,7 @@ PAPER_ABLATION_CONFIGS = {
         "use_cross_residual": True,
         "use_gate_dynamic_weight": False,
         "use_final_dynamic_fusion": False,
-        "use_rcd_fusion": False,
+        "use_crcf": False,
         "use_outer_gate": False,
         "use_sgla": True,
         "use_sgla_loss": True,
@@ -443,72 +443,14 @@ PAPER_ABLATION_CONFIGS = {
         "label_smoothing": 0.0,
         "use_amcf": False,
     },
-    "Paper_A3_ModalGate": {
+    "Paper_A3_GTD": {
         "use_temporal_cnn": True,
         "use_cross_attn": False,
         "use_cross_residual": True,
-        "use_gate_dynamic_weight": True,
+        "use_gate_dynamic_weight": False,
         "use_final_dynamic_fusion": False,
-        "use_rcd_fusion": False,
-        "use_outer_gate": True,
-        "use_sgla": True,
-        "use_sgla_loss": True,
-        "use_prefusion_denoise": False,
-        "use_aug": True,
-        "use_class_weight": True,
-        "label_smoothing": 0.0,
-        "use_amcf": False,
-    },
-    "Paper_A4_Denoise": {
-        "use_temporal_cnn": True,
-        "use_cross_attn": False,
-        "use_cross_residual": True,
-        "use_gate_dynamic_weight": True,
-        "use_final_dynamic_fusion": False,
-        "use_rcd_fusion": False,
-        "use_outer_gate": True,
-        "use_sgla": True,
-        "use_sgla_loss": True,
-        "use_prefusion_denoise": True,
-        "use_aug": True,
-        "use_class_weight": True,
-        "label_smoothing": 0.0,
-        "use_amcf": False,
-    },
-    "Paper_A5_RCD_Fusion": {
-        "use_temporal_cnn": True,
-        "use_cross_attn": False,
-        "use_cross_residual": True,
-        "use_gate_dynamic_weight": True,
-        "use_final_dynamic_fusion": False,
-        "use_rcd_fusion": True,
-        "rcd_aux_weight": 0.05,
-        "rcd_balance_weight": 0.01,
-        "rcd_use_reliability": True,
-        "rcd_use_consistency": True,
-        "rcd_use_certainty": True,
-        "use_outer_gate": True,
-        "use_sgla": True,
-        "use_sgla_loss": True,
-        "use_prefusion_denoise": True,
-        "use_aug": True,
-        "use_class_weight": True,
-        "label_smoothing": 0.0,
-        "use_amcf": False,
-    },
-    "Paper_A6_CrossModal": {
-        "use_temporal_cnn": True,
-        "use_cross_attn": True,
-        "use_cross_residual": True,
-        "use_gate_dynamic_weight": True,
-        "use_final_dynamic_fusion": False,
-        "use_rcd_fusion": True,
-        "rcd_aux_weight": 0.05,
-        "rcd_balance_weight": 0.01,
-        "rcd_use_reliability": True,
-        "rcd_use_consistency": True,
-        "rcd_use_certainty": True,
-        "use_outer_gate": True,
+        "use_crcf": False,
+        "use_outer_gate": False,
         "use_sgla": True,
         "use_sgla_loss": True,
         "use_prefusion_denoise": True,
@@ -518,59 +460,43 @@ PAPER_ABLATION_CONFIGS = {
         "use_amcf": False,
     },
 }
-REVISED_PAPER_CONFIGS = {
-    "Paper_R_A3_CRCF_NoGTD": {
-        **PAPER_ABLATION_CONFIGS["Paper_A5_RCD_Fusion"],
-        "use_prefusion_denoise": False,
-        "rcd_use_reliability": True,
-        "rcd_use_consistency": True,
-        "rcd_use_certainty": True,
+PAPER_ABLATION_CONFIGS["Paper_A4_DSFN"] = {
+    **PAPER_ABLATION_CONFIGS["Paper_A3_GTD"],
+    "use_crcf": True,
+    "crcf_aux_weight": 0.05,
+    "crcf_balance_weight": 0.01,
+    "crcf_use_reliability": True,
+    "crcf_use_consistency": True,
+    "crcf_use_certainty": True,
+}
+
+CRCF_ABLATION_CONFIGS = {
+    "Paper_B0_AvgFusion": {
+        **PAPER_ABLATION_CONFIGS["Paper_A3_GTD"],
     },
-    "Paper_R_B1_Reliability": {
-        **PAPER_ABLATION_CONFIGS["Paper_A5_RCD_Fusion"],
-        "rcd_use_reliability": True,
-        "rcd_use_consistency": False,
-        "rcd_use_certainty": False,
+    "Paper_B1_Reliability": {
+        **PAPER_ABLATION_CONFIGS["Paper_A4_DSFN"],
+        "crcf_use_reliability": True,
+        "crcf_use_consistency": False,
+        "crcf_use_certainty": False,
     },
-    "Paper_R_B2_ReliabilityConsistency": {
-        **PAPER_ABLATION_CONFIGS["Paper_A5_RCD_Fusion"],
-        "rcd_use_reliability": True,
-        "rcd_use_consistency": True,
-        "rcd_use_certainty": False,
+    "Paper_B2_ReliabilityConsistency": {
+        **PAPER_ABLATION_CONFIGS["Paper_A4_DSFN"],
+        "crcf_use_reliability": True,
+        "crcf_use_consistency": True,
+        "crcf_use_certainty": False,
     },
-    "Paper_R_B3_ReliabilityCertainty": {
-        **PAPER_ABLATION_CONFIGS["Paper_A5_RCD_Fusion"],
-        "rcd_use_reliability": True,
-        "rcd_use_consistency": False,
-        "rcd_use_certainty": True,
+    "Paper_B3_ReliabilityDynamicPath": {
+        **PAPER_ABLATION_CONFIGS["Paper_A4_DSFN"],
+        "crcf_use_reliability": True,
+        "crcf_use_consistency": False,
+        "crcf_use_certainty": True,
+    },
+    "Paper_B4_CRCF": {
+        **PAPER_ABLATION_CONFIGS["Paper_A4_DSFN"],
     },
 }
-PAPER_ABLATION_CONFIGS.update(REVISED_PAPER_CONFIGS)
-for _paper_name, _paper_extra in {
-    "Paper_A7_GlobalBranch": {
-        "use_global_branch": True,
-    },
-    "Paper_A8_TCN_KD": {
-        "teacher_model": "tcn",
-        "teacher_kd_weight": 0.5,
-        "teacher_kd_temperature": 3.0,
-    },
-    "Paper_A9_ResNet_KD": {
-        "teacher_model": "resnet1d",
-        "teacher_kd_weight": 0.5,
-        "teacher_kd_temperature": 3.0,
-    },
-    "Paper_A10_Global_TCN_KD": {
-        "use_global_branch": True,
-        "teacher_model": "tcn",
-        "teacher_kd_weight": 0.5,
-        "teacher_kd_temperature": 3.0,
-    },
-}.items():
-    PAPER_ABLATION_CONFIGS[_paper_name] = {
-        **PAPER_ABLATION_CONFIGS["Paper_A5_RCD_Fusion"],
-        **_paper_extra,
-    }
+PAPER_ABLATION_CONFIGS.update(CRCF_ABLATION_CONFIGS)
 ABLATION_CONFIGS.update(PAPER_ABLATION_CONFIGS)
 def apply_ablation_config(exp_name):
     # 先加载 Full 配置
@@ -605,11 +531,11 @@ def apply_runtime_overrides():
         "SGLA_FPS_NUM_BATCHES": ("fps_num_batches", int),
         "SGLA_FPS_BATCH_SIZE": ("fps_batch_size", int),
         "SGLA_LABEL_SMOOTHING": ("label_smoothing", float),
-        "SGLA_RCD_AUX_WEIGHT": ("rcd_aux_weight", float),
-        "SGLA_RCD_BALANCE_WEIGHT": ("rcd_balance_weight", float),
-        "SGLA_RCD_USE_RELIABILITY": ("rcd_use_reliability", _parse_bool),
-        "SGLA_RCD_USE_CONSISTENCY": ("rcd_use_consistency", _parse_bool),
-        "SGLA_RCD_USE_CERTAINTY": ("rcd_use_certainty", _parse_bool),
+        "SGLA_CRCF_AUX_WEIGHT": ("crcf_aux_weight", float),
+        "SGLA_CRCF_BALANCE_WEIGHT": ("crcf_balance_weight", float),
+        "SGLA_CRCF_USE_RELIABILITY": ("crcf_use_reliability", _parse_bool),
+        "SGLA_CRCF_USE_CONSISTENCY": ("crcf_use_consistency", _parse_bool),
+        "SGLA_CRCF_USE_CERTAINTY": ("crcf_use_certainty", _parse_bool),
         "SGLA_CHEAP_AUX_WEIGHT": ("cheap_aux_weight", float),
         "SGLA_CHEAP_KD_WEIGHT": ("cheap_kd_weight", float),
         "SGLA_CHEAP_KD_TEMPERATURE": ("cheap_kd_temperature", float),
@@ -1246,9 +1172,9 @@ class ResidualDynamicFusion(nn.Module):
 
 
 
-class RCDynamicFusion(nn.Module):
+class CRCFFusion(nn.Module):
     """
-    Reliability-Consistency Dynamic Fusion (RCD-Fusion)
+    Cross-Modal Similarity-Guided Reliability-Consistency Fusion (CRCF)
 
     融合依据：
       1) 单模态分类置信度 confidence；
@@ -1319,15 +1245,15 @@ class RCDynamicFusion(nn.Module):
         if cert_v is None:
             cert_v = torch.ones_like(conf_v)
 
-        if not CONFIG.get("rcd_use_reliability", True):
+        if not CONFIG.get("crcf_use_reliability", True):
             conf_g = torch.ones_like(conf_g)
             conf_a = torch.ones_like(conf_a)
             conf_v = torch.ones_like(conf_v)
-        if not CONFIG.get("rcd_use_consistency", True):
+        if not CONFIG.get("crcf_use_consistency", True):
             cons_g = torch.ones_like(cons_g)
             cons_a = torch.ones_like(cons_a)
             cons_v = torch.ones_like(cons_v)
-        if not CONFIG.get("rcd_use_certainty", True):
+        if not CONFIG.get("crcf_use_certainty", True):
             cert_g = torch.ones_like(cert_g)
             cert_a = torch.ones_like(cert_a)
             cert_v = torch.ones_like(cert_v)
@@ -1349,13 +1275,13 @@ class RCDynamicFusion(nn.Module):
         )
 
         branch_logits = {"g": logit_g, "a": logit_a, "v": logit_v}
-        rcd_info = {
+        crcf_info = {
             "confidence": torch.cat([conf_g, conf_a, conf_v], dim=1),
             "consistency": torch.cat([cons_g, cons_a, cons_v], dim=1),
             "certainty": torch.cat([cert_g, cert_a, cert_v], dim=1),
             "fusion_weights": alpha,
         }
-        return fused, alpha, branch_logits, rcd_info
+        return fused, alpha, branch_logits, crcf_info
 
 
 class TokenDenoiseBlock(nn.Module):
@@ -1621,14 +1547,14 @@ class SignalTransformerModel(nn.Module):
         a_cls = a.mean(1)
         v_cls = v.mean(1)
 
-        if CONFIG.get("use_rcd_fusion", False):
-            fused, w_final, branch_logits, rcd_info = self.rcd_fusion(
+        if CONFIG.get("use_crcf", False):
+            fused, w_final, branch_logits, crcf_info = self.crcf(
                 g, a, v, probs_tuple=probs_tuple
             )
             aux = {
                 "branch_logits": branch_logits,
                 "fusion_weights": w_final,
-                "rcd_info": rcd_info,
+                "crcf_info": crcf_info,
             }
         elif CONFIG.get("use_final_dynamic_fusion", True):
             fused, w_final = self.final_dynamic_fusion(g, a, v)
@@ -1761,12 +1687,12 @@ class SignalTransformerModel(nn.Module):
         # ===============================
         self.gate_fusion = DynamicFusion(dim)
         self.final_dynamic_fusion = ResidualDynamicFusion(dim)
-        self.rcd_fusion = RCDynamicFusion(
+        self.crcf = CRCFFusion(
             dim=dim,
             num_classes=num_classes,
             hidden=64,
             temperature=1.0
-        ) if CONFIG.get("use_rcd_fusion", False) else None
+        ) if CONFIG.get("use_crcf", False) else None
 
         self.use_global_branch = CONFIG.get("use_global_branch", False)
         if self.use_global_branch:
@@ -1941,7 +1867,7 @@ class SignalTransformerModel(nn.Module):
         # 9. 残差跨模态注意力
         g_c, a_c, v_c = self.apply_cross_modal(g_c, a_c, v_c)
 
-        # 10. 最终融合：AvgFusion / DynamicFusion / RCD-Fusion 三选一
+        # 10. 最终融合：AvgFusion / DynamicFusion / CRCF 三选一
         probs_tuple = (pg, pa, pv)
         fused, final_w, fusion_aux = self.final_fuse(g_c, a_c, v_c, probs_tuple=probs_tuple)
 
@@ -2206,7 +2132,7 @@ class SignalTransformerModel(nn.Module):
             aux = None
 
         # 第三个返回值保持为 outer gate 权重，保证动态层使用统计逻辑不变。
-        # RCD 的最终融合权重保存在 aux["fusion_weights"] 中。
+        # CRCF 的最终融合权重保存在 aux["fusion_weights"] 中。
         return logits, aux, gate_w, probs_tuple, bases_tuple, outs_tuple
 
 # ==========================================
@@ -2276,7 +2202,7 @@ class HybridLoss(nn.Module):
                     if p.shape[1] == len(o):
                         loss_sim += self.sgla_loss(p, b, o)
 
-        # 3. RCD-Fusion 单模态辅助分类损失与融合权重批均衡正则
+        # 3. CRCF 单模态辅助分类损失与融合权重批均衡正则
         loss_aux = torch.tensor(0.0, device=targets.device)
         loss_balance = torch.tensor(0.0, device=targets.device)
         loss_cheap = torch.tensor(0.0, device=targets.device)
@@ -2329,7 +2255,7 @@ class HybridLoss(nn.Module):
                     reduction="batchmean",
                 ) * (temperature ** 2)
 
-        if CONFIG.get("use_rcd_fusion", False) and aux_outputs is not None:
+        if CONFIG.get("use_crcf", False) and aux_outputs is not None:
             branch_logits = aux_outputs.get("branch_logits", None)
             if branch_logits is not None:
                 loss_aux = (
@@ -2356,8 +2282,8 @@ class HybridLoss(nn.Module):
         return (
             loss_main
             + 0.01 * (loss_sim / 3.0)
-            + float(CONFIG.get("rcd_aux_weight", 0.20)) * loss_aux
-            + float(CONFIG.get("rcd_balance_weight", 0.01)) * loss_balance
+            + float(CONFIG.get("crcf_aux_weight", 0.20)) * loss_aux
+            + float(CONFIG.get("crcf_balance_weight", 0.01)) * loss_balance
             + float(CONFIG.get("cheap_aux_weight", 0.0)) * loss_cheap
             + float(CONFIG.get("cheap_kd_weight", 0.0)) * loss_cheap_kd
             + float(CONFIG.get("shallow_aux_weight", 0.0)) * loss_shallow
@@ -3012,7 +2938,7 @@ def visualize_modal_weights(model, dataloader, device, save_dir):
     with torch.no_grad():
         for g, a, v, y in dataloader:
             g, a, v = g.to(device), a.to(device), v.to(device)
-            # 优先可视化 RCD-Fusion 的最终融合权重；若不是 RCD，则退回 outer gate 权重。
+            # 优先可视化 CRCF 的最终融合权重；若不是 CRCF，则退回 outer gate 权重。
             _, aux, w, _, _, _ = eval_forward(model, g, a, v)
             if aux is not None and isinstance(aux, dict) and "fusion_weights" in aux:
                 w_plot = aux["fusion_weights"]
@@ -3448,7 +3374,7 @@ def main():
     elif CONFIG.get("train_fusion_head_only", False):
         trainable_prefixes = (
             "simple_head.",
-            "rcd_fusion.",
+            "crcf.",
             "gate_fusion.",
             "final_dynamic_fusion.",
             "global_branch.",
@@ -3512,7 +3438,7 @@ def main():
             if CONFIG.get("train_fusion_head_only", False):
                 for module_name in (
                     "simple_head",
-                    "rcd_fusion",
+                    "crcf",
                     "gate_fusion",
                     "final_dynamic_fusion",
                     "global_branch",
