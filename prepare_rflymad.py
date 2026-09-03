@@ -48,13 +48,19 @@ class FlightCase:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Build a leakage-free RflyMAD 9-channel window dataset grouped by flight log."
+        description="Build the RflyMAD 9-channel window dataset used in the DSFN manuscript."
     )
     parser.add_argument("--sensor-zip", type=Path, required=True)
     parser.add_argument("--normal-zip", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--window-size", type=int, default=1024)
-    parser.add_argument("--stride", type=int, default=256)
+    parser.add_argument("--stride", type=int, default=512)
+    parser.add_argument(
+        "--split-mode",
+        choices=("window", "flight"),
+        default="window",
+        help="Use the manuscript's window-level split by default; 'flight' keeps logs disjoint.",
+    )
     parser.add_argument("--split-seed", type=int, default=42)
     parser.add_argument("--train-ratio", type=float, default=0.8)
     parser.add_argument("--val-ratio", type=float, default=0.1)
@@ -148,6 +154,41 @@ def split_flights(
     if len(split_map) != len(cases):
         raise RuntimeError("Flight split did not assign every case exactly once.")
     return split_map
+
+
+def split_windows(
+    labels: np.ndarray, train_ratio: float, val_ratio: float, seed: int
+) -> dict[str, np.ndarray]:
+    if not 0 < train_ratio < 1 or not 0 < val_ratio < 1 or train_ratio + val_ratio >= 1:
+        raise ValueError("train_ratio and val_ratio must be positive and sum to less than one.")
+    rng = np.random.RandomState(seed)
+    train_parts: list[np.ndarray] = []
+    val_parts: list[np.ndarray] = []
+    test_parts: list[np.ndarray] = []
+    for label_id in np.unique(labels):
+        class_indices = np.flatnonzero(labels == label_id)
+        rng.shuffle(class_indices)
+        class_size = len(class_indices)
+        train_size = int(round(train_ratio * class_size))
+        val_size = int(round(val_ratio * class_size))
+        if train_size + val_size >= class_size:
+            train_size = max(class_size - 2, 1)
+            val_size = 1
+        train_parts.append(class_indices[:train_size])
+        val_parts.append(class_indices[train_size : train_size + val_size])
+        test_parts.append(class_indices[train_size + val_size :])
+
+    train_indices = np.concatenate(train_parts)
+    val_indices = np.concatenate(val_parts)
+    test_indices = np.concatenate(test_parts)
+    rng.shuffle(train_indices)
+    rng.shuffle(val_indices)
+    rng.shuffle(test_indices)
+    return {
+        "train": train_indices,
+        "val": val_indices,
+        "test": test_indices,
+    }
 
 
 def _read_csv(archive: zipfile.ZipFile, member: str, usecols: list[str]) -> pd.DataFrame:
@@ -248,6 +289,7 @@ def _write_manifests(
     cases: list[FlightCase],
     split_map: dict[str, str],
     sample_rows: list[dict[str, object]],
+    split_mode: str,
 ) -> None:
     case_frame = pd.DataFrame([asdict(case) for case in cases])
     case_frame["split"] = case_frame["flight_id"].map(split_map)
@@ -270,15 +312,18 @@ def _write_manifests(
         )
     summary.to_csv(output_dir / "split_summary.csv", index=False, encoding="utf-8-sig")
 
-    split_groups = {
-        name: set(case_frame.loc[case_frame["split"] == name, "flight_id"])
-        for name in ("train", "val", "test")
-    }
+    if sample_frame.empty:
+        split_groups = {name: set() for name in ("train", "val", "test")}
+    else:
+        split_groups = {
+            name: set(sample_frame.loc[sample_frame["split"] == name, "flight_id"])
+            for name in ("train", "val", "test")
+        }
     leakage = {
         "train_val_overlap": sorted(split_groups["train"] & split_groups["val"]),
         "train_test_overlap": sorted(split_groups["train"] & split_groups["test"]),
         "val_test_overlap": sorted(split_groups["val"] & split_groups["test"]),
-        "passed": all(
+        "flight_disjoint": all(
             not overlap
             for overlap in (
                 split_groups["train"] & split_groups["val"],
@@ -286,11 +331,12 @@ def _write_manifests(
                 split_groups["val"] & split_groups["test"],
             )
         ),
+        "partition_unit": split_mode,
     }
     (output_dir / "leakage_check.json").write_text(
         json.dumps(leakage, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    if not leakage["passed"]:
+    if split_mode == "flight" and not leakage["flight_disjoint"]:
         raise RuntimeError("Flight-level leakage verification failed.")
 
 
@@ -306,11 +352,14 @@ def main() -> None:
     cases.extend(discover_cases(args.normal_zip, normal_archive=True))
     if not cases:
         raise RuntimeError("No valid flight cases were discovered.")
-    split_map = split_flights(cases, args.train_ratio, args.val_ratio, args.split_seed)
+    if args.split_mode == "flight":
+        split_map = split_flights(cases, args.train_ratio, args.val_ratio, args.split_seed)
+    else:
+        split_map = {case.flight_id: "window_level" for case in cases}
     print(f"Discovered {len(cases)} complete flight logs.", flush=True)
 
     if args.dry_run:
-        _write_manifests(output_dir, cases, split_map, [])
+        _write_manifests(output_dir, cases, split_map, [], args.split_mode)
         return
 
     archives = {
@@ -336,7 +385,7 @@ def main() -> None:
                     {
                         "sample_index": sample_offset + local_index,
                         "flight_id": case.flight_id,
-                        "split": split_map[case.flight_id],
+                        "split": split_map[case.flight_id] if args.split_mode == "flight" else "",
                         "label": case.label,
                         "label_id": case.label_id,
                         "flight_status": case.flight_status,
@@ -361,11 +410,22 @@ def main() -> None:
     np.save(output_dir / "train_labels.npy", labels)
 
     sample_frame = pd.DataFrame(sample_rows)
-    split_dir = output_dir / "fixed_group_split_80_10_10_seed42"
+    if args.split_mode == "window":
+        split_indices = split_windows(labels, args.train_ratio, args.val_ratio, args.split_seed)
+        for split_name, indices in split_indices.items():
+            sample_frame.loc[indices, "split"] = split_name
+    else:
+        split_indices = {
+            split_name: sample_frame.loc[
+                sample_frame["split"] == split_name, "sample_index"
+            ].to_numpy(dtype=np.int64)
+            for split_name in ("train", "val", "test")
+        }
+    split_prefix = "fixed_split" if args.split_mode == "window" else "fixed_group_split"
+    split_dir = output_dir / f"{split_prefix}_80_10_10_seed{args.split_seed}"
     split_dir.mkdir(parents=True, exist_ok=True)
-    for split_name in ("train", "val", "test"):
-        indices = sample_frame.loc[sample_frame["split"] == split_name, "sample_index"]
-        np.save(split_dir / f"{split_name}_indices.npy", indices.to_numpy(dtype=np.int64))
+    for split_name, indices in split_indices.items():
+        np.save(split_dir / f"{split_name}_indices.npy", indices)
 
     config = {
         "channels": ["gyro_x", "gyro_y", "gyro_z", "accel_x", "accel_y", "accel_z", "vel_x", "vel_y", "vel_z"],
@@ -374,6 +434,7 @@ def main() -> None:
         "window_size": args.window_size,
         "stride": args.stride,
         "split_seed": args.split_seed,
+        "split_mode": args.split_mode,
         "split_ratios": {"train": args.train_ratio, "val": args.val_ratio, "test": 1.0 - args.train_ratio - args.val_ratio},
         "fault_interval_rule": "rfly_ctrl_lxl rows where id != 1500 and mode != 1500",
         "normal_interval_rule": "complete logged interval",
@@ -388,7 +449,13 @@ def main() -> None:
     (output_dir / "label_map.json").write_text(
         json.dumps(LABEL_TO_ID, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    _write_manifests(output_dir, cases, split_map, sample_rows)
+    _write_manifests(
+        output_dir,
+        cases,
+        split_map,
+        sample_frame.to_dict(orient="records"),
+        args.split_mode,
+    )
     print(f"Saved dataset: {data.shape}, labels: {labels.shape}", flush=True)
     print(f"Output directory: {output_dir}", flush=True)
 
