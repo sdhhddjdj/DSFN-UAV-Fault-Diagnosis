@@ -1,0 +1,9 @@
+torch>=1.11
+numpy>=1.24,<2.0
+pandas>=1.5
+scikit-learn>=1.1
+matplotlib>=3.6
+seaborn>=0.12
+tqdm>=4.64
+thop>=0.1.1.post2209072238
+openpyxl>=3.1
