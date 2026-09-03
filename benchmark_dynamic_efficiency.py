@@ -71,7 +71,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def configure_model() -> None:
-    dsfn.apply_ablation_config("Denoise_RCDFusion")
+    dsfn.apply_ablation_config("Paper_A4_DSFN")
     dsfn.CONFIG.update(
         {
             "use_positional_encoding": True,
