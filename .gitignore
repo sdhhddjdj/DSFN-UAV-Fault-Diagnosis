@@ -1,0 +1,29 @@
+# Datasets and generated splits
+data/processed/
+dataset/
+*.zip
+*.npy
+*.npz
+*.pkl
+*.pickle
+
+# Training artifacts
+runs/
+results/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+
+# Python and local environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
