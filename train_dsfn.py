@@ -86,9 +86,9 @@ CONFIG = {
     "use_sgla_loss": True,     # 是否使用相邻层相似度约束
     "transformer_depth": _env_int("SGLA_TRANSFORMER_DEPTH", 5),
     "transformer_split_layer": _env_int("SGLA_TRANSFORMER_SPLIT_LAYER", 3),
-    # Explicit temporal order information after patch embedding. Sinusoidal
-    # encoding is parameter-free and supports both 16- and 32-point patches.
-    "use_positional_encoding": _env_bool("SGLA_USE_POSITIONAL_ENCODING", True),
+    # The reported manuscript experiments do not add positional encoding after
+    # patch embedding. Keep the implementation available for controlled studies.
+    "use_positional_encoding": _env_bool("SGLA_USE_POSITIONAL_ENCODING", False),
     "position_dropout": _env_float("SGLA_POSITION_DROPOUT", 0.0),
     "gate_threshold": 0.25,
     #降噪
