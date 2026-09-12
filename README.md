@@ -41,6 +41,10 @@ python -m pip install -r requirements.txt
 The experiments use the processed `train_data.npy` and `train_labels.npy`
 derived from the Real-Sensors and Real-No Fault subsets of
 [RflyMAD](https://rfly-openha.github.io/documents/4_resources/dataset.html).
+The source flight logs can be processed with the official
+[RflyMAD Data processing tools](https://github.com/lerlis/Data_processing_tools),
+after which the selected nine-channel samples and labels should be saved as the
+two NumPy arrays described above.
 Import the processed arrays without changing their names or order:
 
 ```bash
