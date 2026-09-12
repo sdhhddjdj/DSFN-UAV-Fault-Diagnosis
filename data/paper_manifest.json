@@ -1,0 +1,35 @@
+{
+  "description": "Processed dataset files used by the manuscript, verified against the author training files.",
+  "shape": [
+    9470,
+    1024,
+    9
+  ],
+  "dtype": "float32",
+  "channels": [
+    "gyro_x",
+    "gyro_y",
+    "gyro_z",
+    "accel_x",
+    "accel_y",
+    "accel_z",
+    "vel_x",
+    "vel_y",
+    "vel_z"
+  ],
+  "class_names": [
+    "Normal",
+    "Accel",
+    "GPS",
+    "Gyro",
+    "Mag",
+    "Baro"
+  ],
+  "sha256": {
+    "train_data.npy": "c25406372a1eadf13fe0b5d934a486edf4fb0d2902c428f97e1e74edc69b6a17",
+    "train_labels.npy": "4e65a7aa12a33ccf54bc0f4a6822266ff3489df96fa542e3227f552b221433b8",
+    "train_indices.npy": "703f7bd1e3f071924bf2f735a4f1095a5f3c623b0bf77bd4160b218b01ffc309",
+    "val_indices.npy": "421cd6392bfb15d138e02724dbd1e26b30c62545c0a076d7b35f6bfe3b28cfa3",
+    "test_indices.npy": "c27c79afe1a42c7e3596b8bc0c084daab4e9648d855ea1c5b33d10494e4dffcb"
+  }
+}

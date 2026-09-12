@@ -1,0 +1,38 @@
+# Datasets and generated splits
+data/processed/
+dataset/
+*.zip
+*.npy
+*.npz
+*.pkl
+*.pickle
+
+# Training artifacts
+runs/
+runs_*/
+paper_runs_*/
+results/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+
+# Python and local environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Fixed protocol files are small and are part of the paper reproduction.
+!data/paper_split/
+!data/paper_split/*.npy
+data/paper/
+artifacts/
+*_reference_comparison.csv
