@@ -1,0 +1,73 @@
+dataset,model,regime,metric,mean_percent,std_percent
+uavfd,DSFN,Clean,accuracy,77.35,13.90
+uavfd,DSFN,Clean,macro_f1,77.36,14.46
+uavfd,DSFN,Noise Mean,accuracy,77.66,11.35
+uavfd,DSFN,Noise Mean,macro_f1,77.49,11.73
+uavfd,DSFN,Low-SNR Mean,accuracy,77.32,9.71
+uavfd,DSFN,Low-SNR Mean,macro_f1,77.10,10.04
+uavfd,DSFN,Masking Mean,accuracy,72.65,10.54
+uavfd,DSFN,Masking Mean,macro_f1,71.64,11.23
+uavfd,ResNet1D,Clean,accuracy,42.94,3.19
+uavfd,ResNet1D,Clean,macro_f1,42.14,3.72
+uavfd,ResNet1D,Noise Mean,accuracy,42.86,2.08
+uavfd,ResNet1D,Noise Mean,macro_f1,42.22,2.29
+uavfd,ResNet1D,Low-SNR Mean,accuracy,43.24,1.99
+uavfd,ResNet1D,Low-SNR Mean,macro_f1,42.79,2.04
+uavfd,ResNet1D,Masking Mean,accuracy,38.63,2.76
+uavfd,ResNet1D,Masking Mean,macro_f1,37.03,2.56
+uavfd,TCN,Clean,accuracy,43.82,2.83
+uavfd,TCN,Clean,macro_f1,42.20,2.97
+uavfd,TCN,Noise Mean,accuracy,44.10,0.99
+uavfd,TCN,Noise Mean,macro_f1,42.66,0.96
+uavfd,TCN,Low-SNR Mean,accuracy,44.08,1.63
+uavfd,TCN,Low-SNR Mean,macro_f1,42.90,1.46
+uavfd,TCN,Masking Mean,accuracy,40.69,2.79
+uavfd,TCN,Masking Mean,macro_f1,39.54,2.86
+uavfd,InceptionTime,Clean,accuracy,61.76,5.79
+uavfd,InceptionTime,Clean,macro_f1,61.34,6.05
+uavfd,InceptionTime,Noise Mean,accuracy,56.67,5.01
+uavfd,InceptionTime,Noise Mean,macro_f1,55.82,5.18
+uavfd,InceptionTime,Low-SNR Mean,accuracy,53.24,4.52
+uavfd,InceptionTime,Low-SNR Mean,macro_f1,52.17,4.52
+uavfd,InceptionTime,Masking Mean,accuracy,48.92,3.22
+uavfd,InceptionTime,Masking Mean,macro_f1,45.75,3.73
+uavfd,LSTM-FCN,Clean,accuracy,44.12,3.89
+uavfd,LSTM-FCN,Clean,macro_f1,42.22,4.13
+uavfd,LSTM-FCN,Noise Mean,accuracy,46.23,4.06
+uavfd,LSTM-FCN,Noise Mean,macro_f1,44.46,3.80
+uavfd,LSTM-FCN,Low-SNR Mean,accuracy,47.68,4.59
+uavfd,LSTM-FCN,Low-SNR Mean,macro_f1,46.04,3.99
+uavfd,LSTM-FCN,Masking Mean,accuracy,39.41,2.91
+uavfd,LSTM-FCN,Masking Mean,macro_f1,38.34,2.90
+uavfd,DRSN,Clean,accuracy,43.53,5.94
+uavfd,DRSN,Clean,macro_f1,42.04,6.48
+uavfd,DRSN,Noise Mean,accuracy,44.26,5.07
+uavfd,DRSN,Noise Mean,macro_f1,43.12,5.05
+uavfd,DRSN,Low-SNR Mean,accuracy,44.77,4.66
+uavfd,DRSN,Low-SNR Mean,macro_f1,43.83,4.33
+uavfd,DRSN,Masking Mean,accuracy,37.35,4.00
+uavfd,DRSN,Masking Mean,macro_f1,35.28,4.36
+uavfd,MRA-CNN,Clean,accuracy,52.06,4.83
+uavfd,MRA-CNN,Clean,macro_f1,48.66,4.25
+uavfd,MRA-CNN,Noise Mean,accuracy,52.73,3.44
+uavfd,MRA-CNN,Noise Mean,macro_f1,48.84,3.47
+uavfd,MRA-CNN,Low-SNR Mean,accuracy,53.20,2.30
+uavfd,MRA-CNN,Low-SNR Mean,macro_f1,48.71,3.14
+uavfd,MRA-CNN,Masking Mean,accuracy,40.98,3.71
+uavfd,MRA-CNN,Masking Mean,macro_f1,38.41,3.83
+uavfd,CNN-DBF,Clean,accuracy,95.59,1.80
+uavfd,CNN-DBF,Clean,macro_f1,95.76,1.81
+uavfd,CNN-DBF,Noise Mean,accuracy,94.82,1.53
+uavfd,CNN-DBF,Noise Mean,macro_f1,95.05,1.45
+uavfd,CNN-DBF,Low-SNR Mean,accuracy,94.41,1.65
+uavfd,CNN-DBF,Low-SNR Mean,macro_f1,94.68,1.53
+uavfd,CNN-DBF,Masking Mean,accuracy,67.16,5.15
+uavfd,CNN-DBF,Masking Mean,macro_f1,66.25,6.17
+uavfd,Centaur,Clean,accuracy,37.94,2.63
+uavfd,Centaur,Clean,macro_f1,35.68,3.42
+uavfd,Centaur,Noise Mean,accuracy,38.45,3.58
+uavfd,Centaur,Noise Mean,macro_f1,36.11,3.85
+uavfd,Centaur,Low-SNR Mean,accuracy,39.12,3.84
+uavfd,Centaur,Low-SNR Mean,macro_f1,36.65,4.02
+uavfd,Centaur,Masking Mean,accuracy,41.67,1.83
+uavfd,Centaur,Masking Mean,macro_f1,37.72,3.58

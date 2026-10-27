@@ -1,38 +1,28 @@
-# Datasets and generated splits
-data/processed/
-dataset/
-*.zip
+# Raw/prepared sensor data and fitted weights
 *.npy
 *.npz
 *.pkl
 *.pickle
-
-# Training artifacts
-runs/
-runs_*/
-paper_runs_*/
-results/
-checkpoints/
+*.mat
 *.pt
 *.pth
 *.ckpt
-
-# Python and local environments
+*.zip
+data/rflymad/
+data/uavfd/
+dataset/
+runs/
+runs_*/
+results/
+checkpoints/
+artifacts/
+# Local environments and editor state
 __pycache__/
 *.py[cod]
 .venv/
 venv/
 .env
-
-# Editors and operating systems
 .idea/
 .vscode/
 .DS_Store
 Thumbs.db
-
-# Fixed protocol files are small and are part of the paper reproduction.
-!data/paper_split/
-!data/paper_split/*.npy
-data/paper/
-artifacts/
-*_reference_comparison.csv

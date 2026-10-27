@@ -173,7 +173,8 @@ def count_parameters(model: nn.Module) -> int:
 
 
 # ============================================================================
-# Additional horizontal comparison baselines used in the manuscript.
+# 以下为论文第四章新增的水平对比基线（只追加，不修改上面的 5 个基线）。
+# 来源: 见仓库根目录 MODEL_SOURCES.md / 论文正文 "Baseline models"。
 #
 # 1) DRSN_Public —— Deep Residual Shrinkage Network (IEEE TII 2020)
 #    公开 DRSN-CW 的 RSNet 结构，输入通道 1 -> 9，类别 4 -> 6。

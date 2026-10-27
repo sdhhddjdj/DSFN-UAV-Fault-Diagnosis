@@ -1,71 +1,37 @@
-"""Run paper training or checkpoint evaluation with one fixed data protocol."""
+"""Train/evaluate the revised DSFN and eight comparison models."""
 import argparse
 import json
-import os
 from pathlib import Path
-import platform
-import subprocess
-import sys
-
-from paper_protocol import DEFAULT_DATA_ROOT, DEFAULT_SPLIT_DIR, validate_paper_data
-
-ROOT = Path(__file__).resolve().parent
-ABLATIONS = [
-    "Paper_A0_StaticAvg", "Paper_A1_DynamicDepth", "Paper_A2_DynamicDepthLoss",
-    "Paper_A3_GTD", "Paper_A4_DSFN", "Paper_B1_Reliability",
-    "Paper_B2_ReliabilityConsistency", "Paper_B3_ReliabilityDynamicPath",
-]
-BASELINES = "resnet1d,tcn,inceptiontime,lstm_fcn,drsn,mra_cnn"
-
+from dsfn.protocol import FAMILIES, SEEDS
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["train", "evaluate"])
-    parser.add_argument("--suite", choices=["dsfn", "ablations", "baselines", "all"], default="dsfn")
-    parser.add_argument("--data-root", default=str(DEFAULT_DATA_ROOT))
-    parser.add_argument("--split-dir", default=str(DEFAULT_SPLIT_DIR))
-    parser.add_argument("--checkpoint-root", default="runs")
-    parser.add_argument("--output-dir", default="results/paper")
-    parser.add_argument("--seeds", default="42,2025,3407")
-    parser.add_argument("--device", default="cuda")
-    args = parser.parse_args()
-    data_check = validate_paper_data(args.data_root, args.split_dir)
-    output = Path(args.output_dir).resolve()
-    output.mkdir(parents=True, exist_ok=True)
-    import torch
-    import numpy as np
-    metadata = dict(vars(args), python=platform.python_version(), pytorch=torch.__version__,
-                    cuda=torch.version.cuda, numpy=np.__version__, data_validation=data_check)
-    (output / "run_config.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
-    common = ["--data-root", str(Path(args.data_root).resolve()), "--split-dir", str(Path(args.split_dir).resolve()),
-              "--seeds", args.seeds, "--device", args.device]
-    runs = str(Path(args.checkpoint_root).resolve())
-    def run(script, extra, env=None):
-        subprocess.run([sys.executable, str(ROOT / script)] + extra, cwd=ROOT, env=env, check=True)
-    if args.action == "train":
-        experiments = ABLATIONS if args.suite in {"all", "ablations"} else ["Paper_A4_DSFN"]
-        if args.suite != "baselines":
-            for experiment in experiments:
-                for seed in args.seeds.split(","):
-                    env = os.environ.copy()
-                    env.update(DSFN_DATA_ROOT=common[1], DSFN_SPLIT_DIR=common[3], DSFN_SAVE_ROOT=runs,
-                               DSFN_EXP_NAME=experiment, DSFN_SEED=seed, DSFN_DEVICE=args.device)
-                    run("paper_training.py", [], env)
-        if args.suite in {"all", "baselines"}:
-            run("paper_experiments/run_baseline_suite.py", common + ["--models", BASELINES, "--save-root", runs])
-    else:
-        models = "dsfn"
-        if args.suite == "baselines": models = BASELINES
-        elif args.suite == "all": models += "," + BASELINES
-        if args.suite == "ablations": models = ",".join(ABLATIONS)
-        evaluation = common + ["--checkpoint-root", runs]
-        run("paper_experiments/run_clean_suite.py", evaluation + ["--models", models, "--output-dir", str(output / "clean")])
-        if args.suite == "all":
-            run("paper_experiments/run_clean_suite.py", evaluation + ["--models", ",".join(ABLATIONS), "--output-dir", str(output / "ablations")])
-        if args.suite != "ablations":
-            for kind in ["noise", "mask"]:
-                run(f"paper_experiments/run_{kind}_robustness_suite.py", evaluation + ["--models", models, "--output-dir", str(output / kind)])
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('command',choices=('train','evaluate','summarize'))
+    p.add_argument('--dataset',choices=('rflymad','uavfd'),required=True)
+    p.add_argument('--data',type=Path)
+    p.add_argument('--config',type=Path)
+    p.add_argument('--family',choices=('all',)+FAMILIES,default='dsfn')
+    p.add_argument('--seeds',default=','.join(map(str,SEEDS)))
+    p.add_argument('--output',type=Path,default=Path('runs'))
+    p.add_argument('--device',default='cpu')
+    p.add_argument('--split',choices=('val','test'),default='test')
+    p.add_argument('--noise-bank',type=Path,help='Optional archived Gaussian bank for the selected split')
+    p.add_argument('--allow-custom-split',action='store_true')
+    a=p.parse_args(); seeds=[int(s) for s in a.seeds.split(',')]
+    families=list(FAMILIES) if a.family=='all' else [a.family]
+    if a.command=='summarize':
+        from dsfn.evaluate import summarize_runs
+        summarize_runs(a.output,a.dataset,families,seeds,a.split)
+        return
+    if a.data is None:p.error('--data is required for train/evaluate')
+    config=json.loads((a.config or Path(__file__).parent/'configs'/(a.dataset+'.json')).read_text(encoding='utf-8'))
+    if config['dataset']!=a.dataset:p.error('Config dataset mismatch')
+    from dsfn.data import load_dataset
+    from dsfn.training import validate_config,train_one,evaluate_one
+    ctx=load_dataset(a.data);validate_config(ctx,config,a.allow_custom_split)
+    for family in families:
+        for seed in seeds:
+            if a.command=='train':train_one(ctx,config,family,seed,a.output,a.device,a.noise_bank)
+            else:evaluate_one(ctx,config,family,seed,a.output,a.device,a.split,a.noise_bank)
 
-
-if __name__ == "__main__":
-    main()
+if __name__=='__main__':main()
