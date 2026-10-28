@@ -1,10 +1,10 @@
 # DSFN: UAV Fault Diagnosis under Sensor Noise and Modality Loss
 
-PyTorch implementation for the revised manuscript **A Robust UAV Sensor Fault Diagnosis Network Based on Feature-Level Denoising and Reliability–Consistency Fusion** (MST-139726).
+PyTorch implementation of **A Robust UAV Sensor Fault Diagnosis Network Based on Feature-Level Denoising and Reliability–Consistency Fusion**.
 
-The revised DSFN uses fixed-depth multi-scale residual dilated CNN encoders, gated feature-level denoising (GTD), and cross-modal reliability–consistency fusion (CRCF). It covers six-class sensor-fault diagnosis on RflyMAD and three-class propeller-fault diagnosis on UAV-FD.
+DSFN uses fixed-depth multi-scale residual dilated CNN encoders, gated feature-level denoising (GTD), and cross-modal reliability–consistency fusion (CRCF). It covers six-class sensor-fault diagnosis on RflyMAD and three-class propeller-fault diagnosis on UAV-FD.
 
-## Revised implementation
+## Model
 
 - Three branches process Gyro, Accel, and Velocity inputs of shape `[B,9,1024]`.
 - Each CNN has a convolutional stem and four residual blocks with dilation rates 1, 2, 4, and 8. Patch lengths are 16, 16, and 32, with 128-dimensional token features.
@@ -12,8 +12,6 @@ The revised DSFN uses fixed-depth multi-scale residual dilated CNN encoders, gat
 - DSFN trains the CNN/fusion network for 80 epochs, then freezes it while training GTD for 40 epochs. Inference correction scales are `(0,0.25,1)`.
 - An unavailable modality is excluded from scoring, available weights are renormalized, and GTD is bypassed in **all** branches for that sample.
 - Seven comparison models train for 120 epochs. Centaur uses a separate 100-epoch denoising-autoencoder stage and 120-epoch classifier stage.
-
-The previous Transformer encoder, dynamic-layer selector, entropy-based path-stability term, and early-exit mechanism are not part of the revised model. The original implementation remains in Git history. Old window-level split files are retired.
 
 ## Environment
 
@@ -26,7 +24,7 @@ python -m pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/
 python -m pip install -r requirements.txt
 ```
 
-For CPU-only use, install the CPU PyTorch build instead. The portable export was tested locally with PyTorch 2.5.1+cpu; see [implementation checks](docs/IMPLEMENTATION.md).
+For CPU-only use, install the CPU PyTorch build instead. CPU implementation checks used PyTorch 2.5.1+cpu; see [verification details](docs/IMPLEMENTATION.md).
 
 ## Data
 
@@ -42,7 +40,11 @@ Obtain data from the original providers:
 | RflyMAD | 6 | 3,207 / 203 / 210 | 512 / 1,024 / 1,024 |
 | UAV-FD | 3 | 555 / 123 / 68 | 512 / 512 / 1,024 |
 
-UAV-FD uses held-out fault-motor-position/log groups, not geographic locations. Its final test set contains **68 nonoverlapping windows**, replacing the earlier 134-window evaluation. The [18-flight assignment](data/manifests/uavfd_flights.csv) is included. RflyMAD's exact case/log assignment and processed arrays are not included in this export; obtain them alongside the processed logs for exact table replication. Matching window counts alone does not establish an identical split.
+**RflyMAD:** Related flight cases and their logs are grouped before window extraction. The fixed training, validation, and test partitions contain **178/22/22 flight-case groups** and **196/24/25 logs**, respectively. A case and its associated logs stay in one partition. All models and five training seeds use these same partitions.
+
+**UAV-FD:** The 18 flights are partitioned into **12/3/3 training, validation, and test flights**. Fault recordings at motor positions 1–4, 5, and 6 are assigned to these partitions, with normal recordings assigned correspondingly. The [flight assignment](data/manifests/uavfd_flights.csv) is included.
+
+For RflyMAD, supply processed flight files and a small CSV manifest containing `log_id`, `group_id`, and `split`; see [data preparation](data/README.md). The per-log RflyMAD assignment is not bundled. Exact numerical replication requires the same flight assignments and preprocessing as the paper.
 
 ```bash
 python prepare_paper_data.py --dataset rflymad   --flights-dir /path/to/canonical_flights   --manifest /path/to/flight_manifest.csv --output-dir data/rflymad
@@ -56,9 +58,9 @@ For the official UAV-FD MAT files, the original synchronization and flight-event
 python prepare_uavfd.py --raw-dir /path/to/official_18_mat_files --output-dir data/uavfd
 ```
 
-Add `--download` only when the script should fetch the files from Zenodo. This converter keeps separate flight segments and the final nonoverlapping-test selection, then checks 555/123/68 windows. It also records the original 134-window Gaussian-bank positions so the evaluator can replay the exact 68-window noise subset.
+Add `--download` to fetch missing files from Zenodo. The converter preserves flight-segment boundaries, creates the **555/123/68-window** partitions, and records the Gaussian-noise replay metadata.
 
-The generic canonical importer does not replace the original raw-log synchronization/conversion. Do not reuse the old shuffled `train_data.npy` split as the revised grouped protocol. Raw data and fitted checkpoints are not bundled.
+The generic importer accepts synchronized, aligned flight signals in the documented channel order. Raw data and fitted checkpoints are not bundled.
 
 ## Train and evaluate
 
@@ -82,7 +84,7 @@ Base/classifier checkpoints are selected by mean macro-F1 over the 18 **validati
 
 ## Manuscript results
 
-These are reported five-seed results (%), not new training results from the portable export:
+The table reports the paper's five-seed mean ± sample standard deviation (%):
 
 | Dataset | Clean accuracy | Noise Mean accuracy | Masking Mean accuracy | Masking Mean macro-F1 |
 | --- | --- | --- | --- | --- |
@@ -91,11 +93,11 @@ These are reported five-seed results (%), not new training results from the port
 
 [Full nine-model tables and CSVs](docs/RESULTS.md) include both metrics in all four regimes. On UAV-FD, CNN-DBF leads under clean/noisy/low-SNR inputs; DSFN leads the mean metrics under modality masking. The larger UAV-FD standard deviations should be retained when interpreting its results.
 
-The architecture and missing-modality inference were compared with the archived experiment source. The full training experiments have **not** been rerun in this exported repository. Exact metric replay also requires the matching preprocessing, split assignments, initialization/checkpoint files, and Gaussian banks. The official UAV-FD converter records the original test-bank positions for automatic subset replay; generic imported data without that metadata uses a newly generated bank unless `--noise-bank` is provided. See [implementation verification](docs/IMPLEMENTATION.md).
+Verification includes model consistency and synthetic train–save–load–evaluate tests. Full training on the real datasets has not been repeated using this package; see [verification details](docs/IMPLEMENTATION.md). The UAV-FD converter supplies noise-replay metadata; for other prepared data, `--noise-bank` accepts a matching saved Gaussian bank.
 
 ## Code map
 
-- `dsfn/models.py`: revised DSFN, CRCF, GTD, and model/loss builders.
+- `dsfn/models.py`: DSFN, CRCF, GTD, and model/loss builders.
 - `dsfn/baseline_models.py`, `dsfn/cnn_dbf.py`, `dsfn/centaur.py`: comparison architectures.
 - `dsfn/training.py`, `dsfn/centaur_training.py`: staged training and checkpoint selection.
 - `dsfn/data.py`, `prepare_paper_data.py`: grouped preparation and training-only statistics.
